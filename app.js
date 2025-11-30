@@ -3,9 +3,9 @@ import express from 'express'
 const app=express();
 const PORT=8000;
 
-import {Student,seedStudents}from './model/student_notes.js'
+import {seedStudents}from './model/student.js'
 import { syncDb } from './config.js';
-
+import { Attachment,Student,Label,Note,NoteSharing,StudyGroup,Subject } from './tableRelationships/relationships.js';
 app.get("/student", async (req, res) => {
     const query = req.query;
     delete query.id;

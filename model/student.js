@@ -5,10 +5,10 @@ class Student extends Model{};
 
 Student.init(
     {
-        id:{
+        studentId:{
             type:DataTypes.INTEGER,
             primaryKey:true,
-            autoIncrement:true,
+            autoIncrement:true
         },
         name:{
             type:DataTypes.STRING,
