@@ -14,7 +14,7 @@ async function start() {
     try {
         await syncDb();
         await seedStudents();
-        await seedNotes();
+        
         app.listen(PORT, () => {
             console.log("Server is listening on port: ", PORT)
         })
@@ -34,6 +34,7 @@ res.send('Start Page');
 })
 //Student
 app.post("/students",async(req,res)=>{
+    //endpoint ce creaza student
 const body=req.body;
 if(Object.keys(body).length===0)
     return res.status(400).json({ message: "body is missing" });
@@ -57,6 +58,7 @@ return res.status(201).json({message:`student with Id: ${student.studentId} crea
 })
 
 app.delete("/students/:studentId",async(req,res)=>{
+    //endpoint ce sterge un student 
     try {
 
        const student = await Student.findOne({
@@ -72,11 +74,11 @@ app.delete("/students/:studentId",async(req,res)=>{
 });
 //De facut editeaza student -> editeaza parola ,editeaza nume ,editeaza an
 
-//Notes
+//Notes 1 
 
 
 app.post("/students/:studentId/notes",async(req,res)=>{
-
+//endpoint care creaza o notita
 const student = await Student.findOne({
      where: { studentId: req.params.studentId }});    
 
@@ -112,6 +114,7 @@ app.get('/students/:studentId/notes/:noteId',async(req,res)=>{
 })
 
 app.patch('/students/:studentId/notes/:noteId/title',async (req,res)=>{
+    //editeaza notita titlu
 try {
  let note=await Note.findOne({
         where:{noteId:req.params.noteId,studentId:req.params.studentId}
@@ -136,6 +139,7 @@ try {
 })
 
 app.patch('/students/:studentId/notes/:noteId/body',async (req,res)=>{
+    //endpoint care editeaza notita body
 try {
  let note=await Note.findOne({
         where:{noteId:req.params.noteId,studentId:req.params.studentId}
@@ -157,6 +161,7 @@ try {
 
 })
 app.delete('/students/:studentId/notes/:noteId',async (req,res)=>{
+    //endpoint care sterge o notita
    try {
 
        const note = await Note.findOne({
@@ -172,5 +177,233 @@ app.delete('/students/:studentId/notes/:noteId',async (req,res)=>{
 
 
 })
+
+//Subjects
+
+app.post("/students/:studentId/subjects",async(req,res)=>{
+// endpoint care creeaza subiecte 
+
+ let student=await Student.findByPk(
+   req.params.studentId)
+    
+    if(!student)
+        return res.status(404).json({message:`student doesn't exist`});
+
+    const body=req.body;
+
+    if(Object.keys(body).length>1||Object.keys(body).length===0)
+        return res.status(400).json({message:"Malformed request"});
+
+    if(!body.name||body.name===""||body.name.trim().length===0)
+    return res.status(400).json({message:"Malformed subject"});
+
+    const subject=await Subject.create({name:body.name});
+
+ 
+    return res.status(201).json({message:"subject created succesfully"});    
+
+})
+
+app.patch("/students/subjects/:subjectId",async(req,res)=>{
+// endpoint care editeaza subiect
+try {
+ let subject=await Subject.findByPk(req.params.subjectId)
+    if(!subject)
+        return res.status(404).json({message:`subject doesn't exist`});
+
+    const newName=req.body.name;
+    
+    if(newName===undefined||!newName||newName.trim().length===0||newName===""|| typeof newName!=="string")
+       return res.status(400).json({message:"Malformed name"});
+    subject.name=newName;
+
+    await subject.save();
+    return res.status(200).json({message:"subject updated succesfully"});    
+} catch (err) {
+    return res.status(500).json({ message: "Something went wrong" })
+}
+
+})
+
+app.delete("/students/subjects/:subjectId",async(req,res)=>{
+    //endpoint care sterge un subiect 
+try {
+     let subject=await Subject.findByPk(req.params.subjectId)
+    if(!subject)
+        return res.status(404).json({message:`subject doesn't exist`});
+        await subject.destroy();
+    return res.status(200).json({message:"subject deleted"});
+
+} catch (err) {
+    return res.status(500).json({ message: "Something went wrong" })
+}
+
+
+})
+
+
+app.patch("/students/:studentId/notes/:noteId/subjects/:subjectId",async(req,res)=>{
+//endpoint care adauga subiectul la notita
+try {
+ let note=await Note.findOne({
+        where:{noteId:req.params.noteId,studentId:req.params.studentId}
+    })
+    if(!note)
+        return res.status(404).json({message:`Note doesn't exist`});
+
+let subject=await Subject.findByPk(
+   req.params.subjectId
+)
+    if (!subject)
+        return res.status(404).json({ message: "Subject doesn't exist" });
+
+    if (note.subjectId === subject.subjectId)
+        return res.status(400).json({ message: "Subject already assigned" });
+
+    note.subjectId=subject.subjectId; 
+    await note.save();
+    return res.status(201).json({message:"subject assigned succesfully"});    
+} catch (err) {
+    return res.status(500).json({ message: "Something went wrong" })
+}})
+
+//Labels
+
+
+app.post("/students/:studentId/labels",async(req,res)=>{
+    // endpoint care creeaza label 
+try {
+ let student=await Student.findByPk(
+   req.params.studentId)
+    
+    if(!student)
+        return res.status(404).json({message:`student doesn't exist`});
+
+    if(Object.keys(req.body).length>1||Object.keys(req.body).length===0)
+        return res.status(400).json({message:"Malformed request"});
+
+    if(!req.body.tag||req.body.tag===""||req.body.tag.trim().length===0)
+    return res.status(400).json({message:"Malformed subject"});
+
+    const label=await Label.create({tag:req.body.tag});
+
+ 
+    return res.status(201).json({message:"label created succesfully"});       
+} catch (err) {
+    return res.status(500).json({ message: "Something went wrong" })
+}})
+
+app.delete("/students/labels/:labelId",async(req,res)=>{
+    //endpoint care sterge un label 
+try {
+     let label=await Label.findByPk(req.params.labelId)
+    if(!label)
+        return res.status(404).json({message:`label doesn't exist`});
+    
+    await label.destroy();
+    return res.status(200).json({message:"label deleted"});
+
+} catch (err) {
+    return res.status(500).json({ message: "Something went wrong" })
+}})
+
+app.patch("/students/labels/:labelId",async(req,res)=>{
+// endpoint care editeaza label
+try {
+ let label=await Label.findByPk(req.params.labelId)
+    if(!label)
+        return res.status(404).json({message:`label doesn't exist`});
+
+    let newTag=req.body.tag;
+    
+    if(newTag===undefined||!newTag||newTag.trim().length===0||newTag===""|| typeof newTag!=="string")
+       return res.status(400).json({message:"Malformed tag"});
+
+    label.tag=newTag;
+
+    await label.save();
+    return res.status(200).json({message:"label updated succesfully"});    
+} catch (err) {
+    return res.status(500).json({ message: "Something went wrong" })
+}
+
+//de facut endpoint care editeaza un label 
+//de facut endpoint care iti returneaza toate labelurile
+
+
+}) 
+
+app.patch("/students/:studentId/notes/:noteId/:labelId",async(req,res)=>{
+//endpoint care adauga label la notita
+try {
+ let note=await Note.findOne({
+        where:{noteId:req.params.noteId,studentId:req.params.studentId}
+    })
+    if(!note)
+        return res.status(404).json({message:`Note doesn't exist`});
+
+let label=await Label.findByPk(
+   req.params.labelId
+)
+    if (!label) {
+      return res.status(404).json({ message: "label doesn't exist" });
+    }
+     await note.addLabels(label, { through: { unique: true } });
+
+    return res.status(201).json({message:"label assigned succesfully"});    
+} catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      message: "Something went wrong",
+      error: err.message
+    });
+}})
+
+//Notes2
+
+app.get("/students/:studentId/notes/:noteId/labels",async(req,res)=>{
+    //toate labelurile unei notite
+ let note=await Note.findOne({
+        where:{noteId:req.params.noteId,studentId:req.params.studentId}
+    })
+    if(!note)
+        return res.status(404).json({message:`Note doesn't exist`});
+ const labels = await note.getLabels({attributes:["tag","body"]});
+    return res.status(200).json(labels);
+
+
+})
+
+app.get("/students/:studentId/labels/:labelId",async(req,res)=>{
+//endponit care returneaza notitele bazat pe un label 
+ let label=await Label.findByPk(req.params.labelId)
+    if(!label)
+        return res.status(404).json({message:`label doesn't exist`});
+ const notes = await label.getNotes({
+    attributes:["title","body"]
+ });
+
+    return res.status(200).json(notes);
+
+})
+
+
+app.get("/students/:studentId/subjects/:subjectId",async(req,res)=>{
+//endponit care returneaza notitele bazat pe un label 
+ let subject=await Subject.findByPk(req.params.subjectId)
+    if(!subject)
+        return res.status(404).json({message:`subject doesn't exist`});
+ const notes = await subject.getNotes({
+    attributes:["title","body"]
+ });
+
+    return res.status(200).json(notes);
+
+})
+
+
+//de reparat sters label, adaugat label unei notite  -> comportament ciudat, baza de date considera NoteLabelings cu key unice si nu stiu de ce cateodata merge cateodata nu  
+
+
 
 start();

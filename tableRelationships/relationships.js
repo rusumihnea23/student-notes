@@ -61,7 +61,7 @@ Attachment.belongsTo(Note, { as: 'Note', foreignKey: "noteId" })
 Subject.hasMany(Note, {
     as: 'Notes',
     foreignKey: "subjectId",
-    onDelete: 'CASCADE',
+    
     onUpdate: 'CASCADE'
 })
 Note.belongsTo(Subject, { as: 'Subject', foreignKey: "subjectId" })
