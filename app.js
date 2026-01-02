@@ -73,6 +73,31 @@ app.delete("/students/:studentId",async(req,res)=>{
     }
 });
 //De facut editeaza student -> editeaza parola ,editeaza nume ,editeaza an
+app.patch('/students/:studentId/username',async (req,res)=>{
+    //editeaza username student
+try {
+ let student=await Student.findOne({
+        where:{studentId:req.params.studentId}
+    })
+    if(!student)
+        return res.status(404).json({message:`student doesn't exist`});
+
+    const newUsername=req.body.username;
+    
+    if(newUsername===undefined||!newUsername||newUsername.trim().length===0||newUsername===""|| typeof newUsername!=="string")
+        res.status(400).json({message:"malformed username"});
+    if(Object.keys(req.body).length>1)
+         res.status(400).json({message:"malformed request"});
+    student.username=newUsername;
+
+    await student.save();
+    return res.status(200).json({message:"username updated succesfully"});    
+} catch (err) {
+    return res.status(500).json({ message: "something went wrong" })
+}
+
+})
+
 
 //Notes 1 
 
@@ -389,7 +414,7 @@ app.get("/students/:studentId/labels/:labelId",async(req,res)=>{
 
 
 app.get("/students/:studentId/subjects/:subjectId",async(req,res)=>{
-//endponit care returneaza notitele bazat pe un label 
+//endponit care returneaza notitele bazat pe un subiect 
  let subject=await Subject.findByPk(req.params.subjectId)
     if(!subject)
         return res.status(404).json({message:`subject doesn't exist`});
@@ -401,9 +426,115 @@ app.get("/students/:studentId/subjects/:subjectId",async(req,res)=>{
 
 })
 
+//Attachments
+app.post("/students/:studentId/notes/:noteId/attachments", async(req,res)=>{
+    //endpoint care creeaza atasament
+   try{
+    let student=await Student.findByPk(
+   req.params.studentId)
+    if(!student)
+        return res.status(404).json({message:`student doesn't exist`});
+    const body=req.body;
+    const note = await Note.findOne({
+     where: { studentId: req.params.studentId, noteId:req.params.noteId}});   
+    
+    if(!note)
+        return res.status(404).json({message:`note doesn't exist`});
+
+   
+    if(!req.body.type||req.body.type===""||req.body.type.trim().length===0)
+    return res.status(400).json({message:"Malformed subject"});
+    if(!req.body.filePath||req.body.filePath===""||req.body.filePath.trim().length===0)
+    return res.status(400).json({message:"Malformed subject"});
+
+    const attachment=await Attachment.create({type:req.body.type,filePath:req.body.filePath, noteId:note.noteId});
+
+ 
+    return res.status(201).json({message:"attachment created succesfully"});   
+   }
+   catch(err){return res.status(500).json({ message: "Something went wrong",error: err.message })}
+})
+
+app.delete("/students/:studentId/notes/:noteId/attachments/:attachmentId",async(req,res)=>{
+    //sterge atasament
+   try {
+        const note = await Note.findOne({
+            where: { noteId:req.params.noteId,studentId: req.params.studentId }
+       })
+
+       const attachment = await Attachment.findOne({
+            where: { attachmentId:req.params.attachmentId, noteId: note.noteId }
+       })
+
+   
+    await attachment.destroy();
+    return res.status(200).json({message:"attachment deleted"});
+    } catch (err) {
+    return res.status(404).json({error:err.message});     
+    }
+})
 
 //de reparat sters label, adaugat label unei notite  -> comportament ciudat, baza de date considera NoteLabelings cu key unice si nu stiu de ce cateodata merge cateodata nu  
 
+//Note sharing
+app.post("/students/:studentId/notes/:noteId/noteSharing",async(req,res)=>{
+    //endpoint care creeaza un notesharing
+     try{
+    let student=await Student.findByPk(
+   req.params.studentId)
+    if(!student)
+        return res.status(404).json({message:`student doesn't exist`});
+    const body=req.body;
+    const note = await Note.findOne({
+     where: { studentId: req.params.studentId, noteId:req.params.noteId}});   
+    
+    if(!note)
+        return res.status(404).json({message:`note doesn't exist`});
+   
+    if(!body.permission||body.permission===""||body.permission.trim().length===0)
+    return res.status(400).json({message:"Malformed subject"});   
+    if(!body.username||body.username===""||body.username.trim().length===0)
+    return res.status(400).json({message:"Malformed subject"});
 
+    const receivingStudent= await  Student.findOne({
+        where:{username:body.username}
+    });
+    if(!receivingStudent)
+        return res.status(404).json({message:'user doesnt exist'});
+
+    const noteSharing=await NoteSharing.create({permission:body.permission,username:body.username, noteId:note.noteId,studemtId:student.studentId});
+
+    return res.status(201).json({message:"Note shared succesfully"});   
+   }
+   catch(err){return res.status(500).json({ message: "Something went wrong",error: err.message })}
+})
+
+app.delete("/students/:studentId/notes/:noteId/noteSharing/:sharingId",async(req,res)=>{
+    //endpoint sterge note sharing
+   try {
+        const note = await Note.findOne({
+            where: { noteId:req.params.noteId,studentId: req.params.studentId }
+       })
+
+       const noteSharing = await NoteSharing.findOne({
+            where: { sharingId:req.params.sharingId, noteId: note.noteId }
+       })
+
+    await noteSharing.destroy();
+    return res.status(200).json({message:"noteSharing deleted"});
+    } catch (err) {
+    return res.status(404).json({error:err.message});     
+    }
+})
+
+app.get("/students/:studentId/noteSharing",async(req,res)=>{
+    let student=await Student.findByPk(req.params.studentId)
+    if(!student)
+        return res.status(404).json({message:'student doesnt exist'});
+    const noteSharings=await NoteSharing.findAll({
+        where:{username:student.username}
+    })
+        return res.status(200).json(noteSharings);
+})
 
 start();

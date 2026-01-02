@@ -12,7 +12,12 @@ NoteSharing.init(
         permission:{
             type:DataTypes.BOOLEAN,
             allowNull:false
+        },
+        username:{
+            type:DataTypes.STRING,
+            allowNull:false
         }
+
     },
     {
         sequelize:database,

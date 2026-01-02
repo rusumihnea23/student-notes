@@ -42,6 +42,14 @@ Student.hasMany(NoteSharing, {
 })
 NoteSharing.belongsTo(Student, { as: 'Student', foreignKey: "studentId" })
 
+Note.hasMany(NoteSharing, {
+    as: 'NoteSharings',
+    foreignKey: "noteId",
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+})
+NoteSharing.belongsTo(Note, { as: 'Note', foreignKey: "noteId" })
+
 Student.hasMany(Note, {
     as: 'Notes',
     foreignKey: "studentId",
