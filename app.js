@@ -1,4 +1,9 @@
 import express from 'express'
+import dotenv from 'dotenv';
+import {authRoutes} from './routes/auth.js'
+import { authenticateToken } from './auth/authMiddleware.js';
+dotenv.config();
+
 
 const app=express();
 app.use(express.json())
@@ -6,7 +11,6 @@ const PORT=8000;
 
 import {seedStudents}from './model/student.js'
 import { syncDb } from './config.js';
-import { seedNotes } from './model/note.js';
 import { Attachment,Student,Label,Note,NoteSharing,StudyGroup,Subject } from './tableRelationships/relationships.js';
 
 
@@ -25,6 +29,7 @@ async function start() {
 
 //HTTPS METHODS
 
+app.use('/api/auth', authRoutes);
 
 app.get("/",async(req,res)=>{
 
@@ -73,7 +78,7 @@ app.delete("/students/:studentId",async(req,res)=>{
     }
 });
 //De facut editeaza student -> editeaza parola ,editeaza nume ,editeaza an
-app.patch('/students/:studentId/username',async (req,res)=>{
+app.patch('/students/:studentId/username',authenticateToken,async (req,res)=>{
     //editeaza username student
 try {
  let student=await Student.findOne({
