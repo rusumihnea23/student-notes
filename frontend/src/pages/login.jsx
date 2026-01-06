@@ -1,10 +1,13 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -15,33 +18,54 @@ function Login() {
       });
 
       localStorage.setItem("token", res.data.token);
-      alert("Login successful!");
+
+      navigate("/"); 
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
     }
   };
 
+  const handleRedirect = () => {
+    navigate("/register");
+  };
+
   return (
     <form onSubmit={handleLogin}>
-      <h2>Login</h2>
-
       {error && <p style={{ color: "red" }}>{error}</p>}
-
-      <input
+      <div class="form-group">
+    <label for="exampleInputEmail1"> Email address </label>
+     <input
         placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
-
-      <input
+  </div>
+  <div class="form-group">
+    <label for="exampleInputPassword1"> Password </label>
+    <input
         type="password"
         placeholder="Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
+  <button type="submit" class="btn btn-primary">Login </button>
+  <p>
+        Don’t have an account?{" "}
+        <button type="button" onClick={handleRedirect}>
+          Register
+        </button>
+      </p>
+  </div>
+  
 
-      <button type="submit">Login</button>
+      <h2>Login</h2>
+
+
+      
     </form>
+    
+    
+
   );
 }
 
