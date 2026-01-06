@@ -1,0 +1,54 @@
+{
+
+  "dependencies": {
+
+    "bcryptjs": "^3.0.3",
+
+    "cors": "^2.8.5",
+
+    "dotenv": "^17.2.3",
+
+    "express": "^5.1.0",
+
+    "jsonwebtoken": "^9.0.3",
+
+    "sequelize": "^6.37.7",
+
+    "sqlite3": "^5.1.7"
+
+  },
+
+  "name": "student-notes",
+
+  "version": "1.0.0",
+
+  "description": "",
+
+  "main": "config.js",
+
+  "type": "module",
+
+  "scripts": {
+
+    "test": "echo \"Error: no test specified\" && exit 1",
+
+    "start": "node app",
+
+    "dev": "nodemon app"
+
+  },
+
+  "keywords": [],
+
+  "author": "",
+
+  "license": "ISC",
+
+  "devDependencies": {
+
+    "nodemon": "^3.1.11"
+
+  }
+
+}
+
