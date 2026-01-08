@@ -1,41 +1,43 @@
-export default function Navbar() {
+import { useNavigate } from "react-router-dom";
+
+const Navbar = () => {
+  const navigate = useNavigate();
+
   return (
-    <nav className="navbar navbar-dark bg-dark" style={styles.nav}>
-      <div style={styles.logo}>Student Notes </div>
-      <div style={styles.links}>
-        <button style={styles.btn}>Home</button>
-        <button style={styles.btn}>About</button>
-        <button style={styles.btn}>My Account</button>
-
-        
+    <div
+      className="bg-dark text-white"
+      style={{
+        width: "220px",        
+        minHeight: "100vh",    
+        position: "sticky",    
+        top: 0,
+      }}
+    >
+      <div className="p-3">
+        <h5 className="mb-4">Menu</h5>
+        <ul className="nav nav-pills flex-column gap-2">
+          <li className="nav-item">
+            <div
+              className="nav-link text-white"
+              style={{ cursor: "pointer" }}
+              onClick={() => navigate("/mynotes")}
+            >
+              My Notes
+            </div>
+          </li>
+          <li className="nav-item">
+            <div
+              className="nav-link text-white"
+              style={{ cursor: "pointer" }}
+              onClick={() => navigate("/shared")}
+            >
+              Shared Notes
+            </div>
+          </li>
+        </ul>
       </div>
-    </nav>
+    </div>
   );
-}
-
-const styles = {
-  nav: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    padding: '1rem 2rem',
-    backgroundColor: '#333',
-    color: 'white',
-    alignItems: 'center'
-  },
-  logo: {
-    fontSize: '1.5rem',
-    fontWeight: 'bold'
-  },
-  links: {
-    display: 'flex',
-    gap: '10px'
-  },
-  btn: {
-    padding: '8px 16px',
-    cursor: 'pointer',
-    backgroundColor: '#555',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px'
-  }
 };
+
+export default Navbar;

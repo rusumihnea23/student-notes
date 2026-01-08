@@ -7,6 +7,7 @@ import Login from "./pages/login.jsx";
 import "bootstrap/dist/css/bootstrap.min.css";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import MyNotes from './pages/MyNotes.jsx';
+import Note from './pages/Note.jsx';
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -30,7 +31,16 @@ createRoot(document.getElementById('root')).render(
               
             </ProtectedRoute>}/>
       
+           <Route path="/students/notes/:noteId" element={ <ProtectedRoute>
+
+              <Note/>
+              
+            </ProtectedRoute>}/>
+
+
         </Route>
+        
+
         <Route
           path="/login"
           element={
@@ -46,7 +56,7 @@ createRoot(document.getElementById('root')).render(
             ) : (
               <Register />
             )} />
-            
+             <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

@@ -113,23 +113,23 @@ try {
 
 
 //Notes 1 
-app.get("/students/mynotes", authenticateToken, async (req, res) => {
-  try {
-    const studentId = req.user.id; // get studentId from JWT
+// app.get("/students/mynotes", authenticateToken, async (req, res) => {
+//   try {
+//     const studentId = req.user.id; // get studentId from JWT
 
-    const student = await Student.findOne({ where: { studentId:studentId } });
-    if (!student) {
-      return res.status(404).json({ message: "Student not found" });
-    }
+//     const student = await Student.findOne({ where: { studentId:studentId } });
+//     if (!student) {
+//       return res.status(404).json({ message: "Student not found" });
+//     }
 
-    const notes = await Note.findAll({ where: { studentId } });
+//     const notes = await Note.findAll({ where: { studentId } });
 
-    return res.status(200).json({ notes });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-});
+//     return res.status(200).json({ notes });
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// });
 
 
 
@@ -161,10 +161,29 @@ return res.status(201).json({message:`note with Id: ${note.noteId} created succe
 
 });
 
-app.get('/students/:studentId/notes/:noteId',async(req,res)=>{
 
+app.get("/students/mynotes", authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.user.id; // get studentId from JWT
+
+    const student = await Student.findOne({ where: { studentId:studentId } });
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    const notes = await Note.findAll({ where: { studentId } });
+
+    return res.status(200).json({ notes });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.get('/students/notes/:noteId',authenticateToken,async(req,res)=>{
+const studentId = req.user.id;
     const note=await Note.findOne({
-        where:{noteId:req.params.noteId,studentId:req.params.studentId}
+        where:{noteId:req.params.noteId,studentId}
     })
     if(!note)
         return res.status(404).json({message:`note doesn't exist`});
