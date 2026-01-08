@@ -9,6 +9,7 @@ dotenv.config();
 const app=express();
 app.use(express.json());
 app.use(cors());
+
 const PORT=8000;
 
 import {seedStudents}from './model/student.js'
@@ -36,7 +37,6 @@ app.use('/api/auth', authRoutes);
 app.get("/",async(req,res)=>{
 
 
-res.send('cacacacacaccaca');
 
 })
 app.get("/api",async(req,res)=>{
@@ -113,6 +113,27 @@ try {
 
 
 //Notes 1 
+app.get("/students/mynotes", authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.user.id; // get studentId from JWT
+
+    const student = await Student.findOne({ where: { studentId:studentId } });
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    const notes = await Note.findAll({ where: { studentId } });
+
+    return res.status(200).json({ notes });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+
+
+
 
 
 app.post("/students/:studentId/notes",async(req,res)=>{

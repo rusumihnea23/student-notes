@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt, { decode } from 'jsonwebtoken';
 
 const authenticateToken = (req, res, next) => {
 
@@ -15,7 +15,7 @@ const authenticateToken = (req, res, next) => {
   try {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
+console.log(decoded)
     req.user = decoded; 
 
     next(); 

@@ -11,6 +11,8 @@ function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError("");
+
     try {
       const res = await api.post("/api/auth/login/students", {
         email,
@@ -18,54 +20,62 @@ function Login() {
       });
 
       localStorage.setItem("token", res.data.token);
-
-      navigate("/"); 
+      navigate("/");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
     }
   };
 
-  const handleRedirect = () => {
-    navigate("/register");
-  };
-
   return (
-    <form onSubmit={handleLogin}>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      <div class="form-group">
-    <label for="exampleInputEmail1"> Email address </label>
-     <input
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-  </div>
-  <div class="form-group">
-    <label for="exampleInputPassword1"> Password </label>
-    <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-  <button type="submit" class="btn btn-primary">Login </button>
-  <p>
-        Don’t have an account?{" "}
-        <button type="button" onClick={handleRedirect}>
-          Register
-        </button>
-      </p>
-  </div>
-  
+    <div
+      className="d-flex justify-content-center align-items-center"
+      style={{ minHeight: "100vh" }}
+    >
+      <div className>
+        <h2 className="mb-4 text-center">Login</h2>
 
-      <h2>Login</h2>
+        <form onSubmit={handleLogin} className="w-100" >
+          {error && <p className="text-danger">{error}</p>}
 
+          <div className="mb-3">
+            <label className="form-label">Email address</label>
+            <input
+              className="form-control"
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
 
-      
-    </form>
-    
-    
+          <div className="mb-3">
+            <label className="form-label">Password</label>
+            <input
+              className="form-control"
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
 
+          <button type="submit" className="btn btn-primary w-100">
+            Login
+          </button>
+
+          <p className="text-center mt-3">
+            Don’t have an account?{" "}
+            <button
+              type="button"
+              className="btn btn-link p-0"
+              onClick={() => navigate("/register")}
+            >
+              Register
+            </button>
+          </p>
+        </form>
+      </div>
+    </div>
   );
 }
 

@@ -59,7 +59,7 @@ authRoutes.post('/login/students', async (req, res) => {
     }
 
       const token = jwt.sign(
-      { id: user.id, email: user.email },
+      { id: user.studentId, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
