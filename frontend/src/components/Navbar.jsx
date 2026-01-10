@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import Logout from "../pages/Logout.jsx"; 
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -33,6 +34,10 @@ const Navbar = () => {
             >
               Shared Notes
             </div>
+          </li>
+
+         <li className="nav-item mt-4">
+            <Logout />
           </li>
         </ul>
       </div>

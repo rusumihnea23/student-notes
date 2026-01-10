@@ -63,7 +63,7 @@ authRoutes.post('/login/students', async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
-    res.json({ message: 'Login successful', token });
+    res.json({ message: 'Login successful', token, studentId: user.studentId  });
   } catch (err) {
     res.status(500).json({  error: err.message });
   }

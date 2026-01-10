@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
 function Register() {
@@ -11,6 +12,7 @@ function Register() {
   });
 
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -26,6 +28,7 @@ function Register() {
         studyYear: Number(form.studyYear),
       });
       alert("Account created! You can now login.");
+      navigate("/login");
     } catch (err) {
       setError(err.response?.data?.message || "Register failed");
     }
