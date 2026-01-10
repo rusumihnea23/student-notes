@@ -8,7 +8,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import MyNotes from './pages/MyNotes.jsx';
 import Note from './pages/Note.jsx';
-import NewNote from './pages/NewNote.jsx';
+import AddNote from './pages/AddNote.jsx';
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -40,7 +40,7 @@ createRoot(document.getElementById('root')).render(
             
             <Route path="/students/note" element={ <ProtectedRoute>
 
-              <NewNote/>
+              <AddNote/>
               
             </ProtectedRoute>}/>
 
