@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams,useNavigate } from "react-router-dom";
 import api from "../services/api";
 
 const MyNotes = () => {
   const [note, setNote] = useState(null); // initialize as null
   const { noteId } = useParams();
-
+const navigate = useNavigate();
   useEffect(() => {
     if (noteId) fetchMyNote();
   }, [noteId]);
@@ -20,15 +20,50 @@ const MyNotes = () => {
     }
   };
 
+ const deleteNote = async () => {
+    if (!window.confirm("Are you sure you want to delete this note?")) return;
+
+    try {
+      await api.delete(`/students/notes/${noteId}`);
+      
+      navigate("/mynotes"); // go back to notes list
+    } catch (err) {
+      console.error("Error deleting note:", err);
+    }
+  };
+
+ const editNote = async () => {
+   
+
+    try {
+      await api.patch(`/students/notes/${noteId}`);
+      
+      navigate("/mynotes"); //nu e implementat corect deocamdata
+    } catch (err) {
+      console.error("Error deleting note:", err);
+    }
+  };
+
   return (
     <div>
-      <h1>TEST</h1>
-
       {note ? (
-        <div>
+        <>
           <h2>{note.Title}</h2>
           <p>{note.Body}</p>
-        </div>
+
+          <button
+            onClick={deleteNote}
+            className="btn btn-danger mt-3"
+          >
+            Delete Note
+          </button>
+          <button
+            // onClick={deleteNote}
+            className="btn btn-sucess mt-3"
+          >
+            Edit Note
+          </button>
+        </>
       ) : (
         <p>Loading note...</p>
       )}

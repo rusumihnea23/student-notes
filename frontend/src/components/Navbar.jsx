@@ -25,6 +25,13 @@ const Navbar = () => {
             >
               My Notes
             </div>
+            <div
+              className="nav-link text-white"
+              style={{ cursor: "pointer" }}
+              onClick={() => navigate("/students/note")}
+            >
+              Add Note
+            </div>
           </li>
           <li className="nav-item">
             <div

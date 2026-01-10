@@ -136,10 +136,11 @@ try {
 
 
 
-app.post("/students/:studentId/notes",async(req,res)=>{
+app.post("/students/notes",authenticateToken,async(req,res)=>{
 //endpoint care creaza o notita
+const studentId = req.user.id;
 const student = await Student.findOne({
-     where: { studentId: req.params.studentId }});    
+     where: { studentId: studentId }});    
 
 if (!student) {
  return res.status(404).json({ message: "student not found" });
@@ -238,12 +239,13 @@ try {
 }
 
 })
-app.delete('/students/:studentId/notes/:noteId',async (req,res)=>{
+app.delete('/students/notes/:noteId',authenticateToken,async (req,res)=>{
     //endpoint care sterge o notita
+    const studentId=req.user.id;
    try {
 
        const note = await Note.findOne({
-            where: { noteId:req.params.noteId,studentId: req.params.studentId }
+            where: { noteId:req.params.noteId,studentId:studentId}
        })
 
    
