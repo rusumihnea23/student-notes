@@ -9,6 +9,7 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import MyNotes from './pages/MyNotes.jsx';
 import Note from './pages/Note.jsx';
 import AddNote from './pages/AddNote.jsx';
+import SharedNotesComponent from './pages/SharedNotesComponent.jsx';
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -43,7 +44,12 @@ createRoot(document.getElementById('root')).render(
               <AddNote/>
               
             </ProtectedRoute>}/>
+            
+ <Route path="/shared" element={ <ProtectedRoute>
 
+              <SharedNotesComponent/>
+              
+            </ProtectedRoute>}/>
         </Route>
         
 

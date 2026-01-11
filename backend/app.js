@@ -270,24 +270,32 @@ try {
 }
 
 })
-app.delete('/students/notes/:noteId',authenticateToken,async (req,res)=>{
-    //endpoint care sterge o notita
-    const studentId=req.user.id;
-   try {
+app.delete('/students/notes/:noteId', authenticateToken, async (req, res) => {
+    const studentId = req.user.id;
+    const { noteId } = req.params;
 
-       const note = await Note.findOne({
-            where: { noteId:req.params.noteId,studentId:studentId}
-       })
+    try {
+        const note = await Note.findOne({
+            where: { 
+                noteId: noteId, 
+                studentId: studentId 
+            }
+        });
 
-   
-    await note.destroy();
-    return res.status(200).json({message:"note deleted"});
+        // 1. Explicitly check if the note exists
+        if (!note) {
+            return res.status(404).json({ message: "Note not found or unauthorized" });
+        }
+
+        await note.destroy();
+        return res.status(200).json({ message: "Note deleted successfully" });
+
     } catch (err) {
-    return res.status(404).json({error:err.message});     
+        console.error("Delete error:", err);
+        // 2. Use 500 for actual server errors, keep 404 for "not found"
+        return res.status(500).json({ error: "Internal server error" });
     }
-
-
-})
+});
 
 //Subjects
 
@@ -521,11 +529,11 @@ app.get("/students/notes/:noteId/labels",authenticateToken,async(req,res)=>{
 app.get("/students/labels/:labelId/filter",authenticateToken,async(req,res)=>{
 //endponit care returneaza notitele bazat pe un label 
 
- let label=await Label.findByPk(req.user.id)
+ let label=await Label.findByPk(req.params.labelId)
     if(!label)
         return res.status(404).json({message:`label doesn't exist`});
  const notes = await label.getNotes({
-    attributes:["title","body"]
+    attributes:["title","body","noteId"]
  });
 
     return res.status(200).json(notes);

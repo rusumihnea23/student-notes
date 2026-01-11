@@ -23,16 +23,19 @@ StudyGroup.belongsToMany(Student, {
 Note.belongsToMany(Label, {
     as: 'Labels',
     through: 'NoteLabelings',
-    foreignKey:'noteId',
-    otherKey: 'labelId'
-})
+    foreignKey: 'noteId',
+    otherKey: 'labelId',
+    onDelete: 'CASCADE', // Add this
+    hooks: true          // Add this to ensure Sequelize handles the cleanup
+});
 
 Label.belongsToMany(Note, {
     as: 'Notes',
     through: 'NoteLabelings',
     foreignKey: 'labelId',
-    otherKey: 'noteId'
-})
+    otherKey: 'noteId',
+    onDelete: 'CASCADE'  // Recommended here too
+});
 
 Student.hasMany(NoteSharing, {
     as: 'NoteSharings',

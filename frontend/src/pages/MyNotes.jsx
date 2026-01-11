@@ -47,19 +47,26 @@ const MyNotes = () => {
     }
   };
 
-  const deleteNote = async (noteId, e) => {
-    e.stopPropagation();
-    if (!window.confirm("Are you sure you want to delete this note?")) return;
-    try {
-      await api.delete(`/students/notes/${noteId}`);
-      const updatedNotes = notes.filter((n) => n.noteId !== noteId);
-      setNotes(updatedNotes);
-      // Re-apply filters after deletion
-      applyFilters(updatedNotes, filterType, selectedSubject, selectedLabel, dateOrder);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+const deleteNote = async (noteId, e) => {
+  e.stopPropagation(); // Prevents navigating to the note details when clicking delete
+  
+  if (!window.confirm("Are you sure you want to delete this note?")) return;
+
+  try {
+    await api.delete(`/students/notes/${noteId}`);
+
+    // Update the master list (notes)
+    const updatedMasterList = notes.filter((n) => n.noteId !== noteId);
+    setNotes(updatedMasterList);
+
+    // Update the display list (filteredNotes) immediately
+    setFilteredNotes((prevFiltered) => prevFiltered.filter((n) => n.noteId !== noteId));
+    
+  } catch (err) {
+    console.error("Delete failed:", err);
+    alert("Could not delete note. It might have been deleted already.");
+  }
+};
 
   // --- HANDLERS ---
 
