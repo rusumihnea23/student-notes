@@ -30,10 +30,11 @@ const AddNote = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const subjectsRes = await api.get("/students/subjects");
+        const [subjectsRes, labelsRes] = await Promise.all([
+          api.get("/students/subjects"),
+          api.get("/students/labels"),
+        ]);
         setSubjects(subjectsRes.data);
-
-        const labelsRes = await api.get("/students/labels");
         setLabels(labelsRes.data);
       } catch (err) {
         console.error("Error fetching subjects or labels:", err);
@@ -42,90 +43,86 @@ const AddNote = () => {
     fetchData();
   }, []);
 
-  // Add new subject
+  // --- ACTIONS ---
+
   const handleAddSubject = async () => {
     if (!newSubjectName.trim()) return;
-
-    if (subjects.some((s) => s.name.toLowerCase() === newSubjectName.trim().toLowerCase())) {
-      alert("Subject already exists");
-      return;
-    }
-
     setSubjectLoading(true);
     try {
       const res = await api.post("/students/subjects", { name: newSubjectName.trim() });
-      const newSubject = res.data;
-      setSubjects([...subjects, newSubject]);
-      setSelectedSubjectId(newSubject.subjectId);
+      setSubjects([...subjects, res.data]);
+      setSelectedSubjectId(res.data.subjectId);
       setNewSubjectName("");
     } catch (err) {
-      console.error("Error adding subject:", err);
       alert("Failed to add subject");
     } finally {
       setSubjectLoading(false);
     }
   };
 
-  // Add new label
   const handleAddLabel = async () => {
     if (!newLabelName.trim()) return;
-
     if (labels.some((l) => l.tag.toLowerCase() === newLabelName.trim().toLowerCase())) {
       alert("Label already exists");
       return;
     }
-
     setLabelLoading(true);
     try {
       const res = await api.post("/students/labels", { tag: newLabelName.trim() });
-      const newLabel = res.data; // { labelId, tag }
-      newLabel._key = Date.now() + Math.random();
-
+      const newLabel = res.data;
       setLabels([...labels, newLabel]);
-      setSelectedLabels([...selectedLabels, newLabel.labelId]); // auto-select
+      setSelectedLabels([...selectedLabels, newLabel.labelId]); 
       setNewLabelName("");
     } catch (err) {
-      console.error("Error adding label:", err);
       alert("Failed to add label");
     } finally {
       setLabelLoading(false);
     }
   };
 
-  // Toggle label selection
+  const deleteGlobalLabel = async (e, labelId) => {
+    e.stopPropagation();
+    if (!window.confirm("Delete this label globally from all notes?")) return;
+    try {
+      await api.delete(`/students/labels/${labelId}`);
+      setLabels((prev) => prev.filter((l) => l.labelId !== labelId));
+      setSelectedLabels((prev) => prev.filter((id) => id !== labelId));
+    } catch (err) {
+      console.error("Error deleting label:", err);
+    }
+  };
+
   const toggleLabel = (labelId) => {
     setSelectedLabels((prev) =>
       prev.includes(labelId) ? prev.filter((id) => id !== labelId) : [...prev, labelId]
     );
   };
 
-  // Remove attachment
-  const removeAttachment = (key) => {
-    setAttachments(attachments.filter((att) => att._key !== key));
-  };
-
-  // Add attachment
   const addAttachment = () => {
     if (!newAttachment.type || !newAttachment.filePath) return;
     setAttachments([...attachments, { ...newAttachment, _key: Date.now() + Math.random() }]);
     setNewAttachment({ type: "", filePath: "" });
   };
 
-  // Submit note
+  const removeAttachment = (key) => {
+    setAttachments(attachments.filter((att) => att._key !== key));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!body.trim()) {
-      alert("Note body cannot be empty");
-      return;
-    }
+    if (!body.trim()) return alert("Note body cannot be empty");
 
     setLoading(true);
     try {
-      // 1️⃣ Create note
       const res = await api.post("/students/notes", { title, body });
       const noteId = res.data.noteId;
 
-      // 2️⃣ Add attachments
+      if (selectedSubjectId) {
+        await api.patch(`/students/notes/${noteId}/subjects/${selectedSubjectId}`);
+      }
+      for (const labelId of selectedLabels) {
+        await api.patch(`/students/notes/${noteId}/labels/${labelId}`);
+      }
       for (const att of attachments) {
         await api.post(`/students/notes/${noteId}/attachments`, {
           type: att.type,
@@ -133,20 +130,8 @@ const AddNote = () => {
         });
       }
 
-      // 3️⃣ Assign subject
-      if (selectedSubjectId) {
-        await api.patch(`/students/notes/${noteId}/subjects/${selectedSubjectId}`);
-      }
-
-      // 4️⃣ Assign labels
-      for (const labelId of selectedLabels) {
-        await api.patch(`/students/notes/${noteId}/labels/${labelId}`);
-      }
-
-      // 5️⃣ Navigate to note view
       navigate(`/students/notes/${noteId}`);
     } catch (err) {
-      console.error("Error creating note:", err);
       alert("Failed to create note");
     } finally {
       setLoading(false);
@@ -154,172 +139,178 @@ const AddNote = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mb-3">
-      {/* TITLE & BODY */}
-      <input
-        className="form-control mb-2"
-        type="text"
-        placeholder="Title (optional)"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
-      <textarea
-        className="form-control mb-2"
-        placeholder="Write your note..."
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-      />
+    <div className="container py-4">
+      <div className="card shadow-sm p-4">
+        <h3 className="mb-4">Create New Note</h3>
 
-      {/* SUBJECT */}
-      <div className="mb-3">
-        <label className="form-label">Subject (optional)</label>
-        <select
-          className="form-select mb-2"
-          value={selectedSubjectId}
-          onChange={(e) => setSelectedSubjectId(e.target.value)}
-        >
-          <option value="">-- No subject --</option>
-          {subjects.map((subj) => (
-            <option key={subj.subjectId} value={subj.subjectId}>
-              {subj.name}
-            </option>
-          ))}
-        </select>
-        <div className="input-group">
+        {/* TITLE & BODY */}
+        <div className="mb-3">
+          <label className="form-label fw-bold">Title</label>
           <input
+            className="form-control mb-2"
             type="text"
-            className="form-control"
-            placeholder="Create new subject"
-            value={newSubjectName}
-            onChange={(e) => setNewSubjectName(e.target.value)}
+            placeholder="Note Title (optional)"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
           />
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={handleAddSubject}
-            disabled={subjectLoading}
-          >
-            {subjectLoading ? "Adding..." : "Add"}
-          </button>
-        </div>
-      </div>
-
-      {/* LABELS */}
-      <div className="mb-3">
-        <label className="form-label">Labels (optional)</label>
-        <div className="d-flex flex-wrap gap-2 mb-2">
-          {labels.map((label) => {
-            const selected = selectedLabels.includes(label.labelId);
-            const key = label.labelId ?? label._key;
-
-            return (
-              <div
-                key={key}
-                onClick={() => toggleLabel(label.labelId)}
-                style={{
-                  padding: "5px 12px",
-                  borderRadius: "20px",
-                  border: selected ? "2px solid #0d6efd" : "1px solid #ccc",
-                  backgroundColor: selected ? "#0d6efd" : "#f0f0f0",
-                  color: selected ? "#fff" : "#333",
-                  cursor: "pointer",
-                  userSelect: "none",
-                  position: "relative",
-                  transition: "0.2s",
-                }}
-              >
-                {label.tag}
-                <span
-                  style={{
-                    position: "absolute",
-                    top: "-5px",
-                    right: "-5px",
-                    fontSize: "0.7rem",
-                    cursor: "pointer",
-                    backgroundColor: "red",
-                    color: "#fff",
-                    borderRadius: "50%",
-                    width: "16px",
-                    height: "16px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Remove label from selection only for new note
-                    setSelectedLabels(selectedLabels.filter((id) => id !== label.labelId));
-                  }}
-                >
-                  ×
-                </span>
-              </div>
-            );
-          })}
-        </div>
-        <div className="input-group mt-2">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Create new label"
-            value={newLabelName}
-            onChange={(e) => setNewLabelName(e.target.value)}
+          <label className="form-label fw-bold">Body</label>
+          <textarea
+            className="form-control mb-3"
+            rows="6"
+            placeholder="Write your note content here..."
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
           />
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={handleAddLabel}
-            disabled={labelLoading}
-          >
-            {labelLoading ? "Adding..." : "Add"}
-          </button>
         </div>
-      </div>
 
-      {/* ATTACHMENTS */}
-      <div className="mb-2">
-        <input
-          type="text"
-          className="form-control mb-1"
-          placeholder="Attachment type"
-          value={newAttachment.type}
-          onChange={(e) => setNewAttachment({ ...newAttachment, type: e.target.value })}
-        />
-        <input
-          type="text"
-          className="form-control mb-1"
-          placeholder="Attachment file path or URL"
-          value={newAttachment.filePath}
-          onChange={(e) => setNewAttachment({ ...newAttachment, filePath: e.target.value })}
-        />
-        <button
-          type="button"
-          className="btn btn-secondary btn-sm"
-          onClick={addAttachment}
-        >
-          Add Attachment
-        </button>
-      </div>
-
-      <ul className="list-group mb-3">
-        {attachments.map((att) => (
-          <li key={att._key} className="list-group-item d-flex justify-content-between">
-            {att.type}: {att.filePath}
+        {/* SUBJECT SECTION */}
+        <div className="mb-4">
+          <label className="form-label fw-bold">Subject</label>
+          <select
+            className="form-select mb-2"
+            value={selectedSubjectId}
+            onChange={(e) => setSelectedSubjectId(e.target.value)}
+          >
+            <option value="">-- No subject --</option>
+            {subjects.map((subj) => (
+              <option key={subj.subjectId} value={subj.subjectId}>
+                {subj.name}
+              </option>
+            ))}
+          </select>
+          <div className="input-group">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Create new subject"
+              value={newSubjectName}
+              onChange={(e) => setNewSubjectName(e.target.value)}
+            />
             <button
               type="button"
-              className="btn btn-sm btn-danger"
-              onClick={() => removeAttachment(att._key)}
+              className="btn btn-outline-secondary"
+              onClick={handleAddSubject}
+              disabled={subjectLoading}
             >
-              Remove
+              {subjectLoading ? "..." : "Add"}
             </button>
-          </li>
-        ))}
-      </ul>
+          </div>
+        </div>
 
-      <button className="btn btn-primary" disabled={loading}>
-        {loading ? "Adding..." : "Add Note"}
-      </button>
-    </form>
+        {/* LABELS SECTION */}
+        <div className="mb-4">
+          <label className="form-label fw-bold">Labels (Click to toggle)</label>
+          <div className="d-flex flex-wrap gap-2 mb-2">
+            {labels.map((label) => {
+              const isSelected = selectedLabels.includes(label.labelId);
+              return (
+                <div
+                  key={label.labelId}
+                  onClick={() => toggleLabel(label.labelId)}
+                  style={{
+                    padding: "5px 15px",
+                    borderRadius: "20px",
+                    border: isSelected ? "2px solid #0d6efd" : "1px solid #ccc",
+                    backgroundColor: isSelected ? "#0d6efd" : "#f8f9fa",
+                    color: isSelected ? "#fff" : "#333",
+                    cursor: "pointer",
+                    position: "relative",
+                    transition: "0.2s",
+                    userSelect: "none",
+                  }}
+                >
+                  {label.tag}
+                  <span
+                    onClick={(e) => deleteGlobalLabel(e, label.labelId)}
+                    style={{
+                      marginLeft: "10px",
+                      fontWeight: "bold",
+                      color: isSelected ? "#ffc107" : "#dc3545",
+                    }}
+                  >
+                    &times;
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="input-group">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Create new label"
+              value={newLabelName}
+              onChange={(e) => setNewLabelName(e.target.value)}
+            />
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleAddLabel}
+              disabled={labelLoading}
+            >
+              {labelLoading ? "..." : "Add"}
+            </button>
+          </div>
+        </div>
+
+        {/* ATTACHMENTS SECTION */}
+        <div className="mb-4">
+          <label className="form-label fw-bold">Attachments</label>
+          <div className="row g-2 mb-2">
+            <div className="col-4">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Type"
+                value={newAttachment.type}
+                onChange={(e) => setNewAttachment({ ...newAttachment, type: e.target.value })}
+              />
+            </div>
+            <div className="col-6">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="File Path / URL"
+                value={newAttachment.filePath}
+                onChange={(e) => setNewAttachment({ ...newAttachment, filePath: e.target.value })}
+              />
+            </div>
+            <div className="col-2">
+              <button type="button" className="btn btn-dark w-100" onClick={addAttachment}>
+                Add
+              </button>
+            </div>
+          </div>
+
+          <ul className="list-group">
+            {attachments.map((att) => (
+              <li key={att._key} className="list-group-item d-flex justify-content-between align-items-center">
+                <span>
+                  <strong>{att.type}:</strong> {att.filePath}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-danger"
+                  onClick={() => removeAttachment(att._key)}
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* FINAL ACTIONS */}
+        <div className="d-flex gap-2 border-top pt-3">
+          <button className="btn btn-primary px-4" onClick={handleSubmit} disabled={loading}>
+            {loading ? "Adding..." : "Save Note"}
+          </button>
+          <button className="btn btn-outline-secondary px-4" onClick={() => navigate(-1)}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 

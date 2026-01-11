@@ -428,19 +428,19 @@ app.post("/students/labels", authenticateToken, async (req, res) => {
   }
 });
 
-app.delete("/students/labels/:labelId",async(req,res)=>{
-    //endpoint care sterge un label 
-try {
-     let label=await Label.findByPk(req.params.labelId)
-    if(!label)
-        return res.status(404).json({message:`label doesn't exist`});
+app.delete("/students/labels/:labelId", authenticateToken, async (req, res) => {
+    //sterge un label
     
-    await label.destroy();
-    return res.status(200).json({message:"label deleted"});
+  try {
+    const label = await Label.findByPk(req.params.labelId);
+    if (!label) return res.status(404).json({ message: "Label doesn't exist" });
 
-} catch (err) {
-    return res.status(500).json({ message: "Something went wrong" })
-}})
+    await label.destroy();
+    res.json({ message: "Label deleted" });
+  } catch (err) {
+    res.status(500).json({ message: "Something went wrong" });
+  }
+});
 
 app.patch("/students/labels/:labelId",async(req,res)=>{
 // endpoint care editeaza label
@@ -486,8 +486,23 @@ app.patch("/students/notes/:noteId/labels/:labelId", authenticateToken, async (r
   }
 });
 
+app.delete("/students/notes/:noteId/labels/:labelId", authenticateToken, async (req, res) => {
+    //unasign label from note 
+  try {
+    const note = await Note.findOne({
+      where: { noteId: req.params.noteId, studentId: req.user.id }
+    });
+    if (!note) return res.status(404).json({ message: "Note doesn't exist" });
 
+    const label = await Label.findByPk(req.params.labelId);
+    if (!label) return res.status(404).json({ message: "Label doesn't exist" });
 
+    await note.removeLabel(label);
+    res.status(200).json({ message: "Label removed" });
+  } catch (err) {
+    res.status(500).json({ message: "Something went wrong" });
+  }
+});
 //Notes2
 
 app.get("/students/notes/:noteId/labels",authenticateToken,async(req,res)=>{

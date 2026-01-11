@@ -7,6 +7,7 @@ const Logout = () => {
     console.log("Logging out"); // DEBUG
     localStorage.removeItem("token");
     navigate("/login", { replace: true });
+      window.location.href = "/login";
   };
 
   return (
