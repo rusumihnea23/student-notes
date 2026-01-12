@@ -25,8 +25,8 @@ Note.belongsToMany(Label, {
     through: 'NoteLabelings',
     foreignKey: 'noteId',
     otherKey: 'labelId',
-    onDelete: 'CASCADE', // Add this
-    hooks: true          // Add this to ensure Sequelize handles the cleanup
+    onDelete: 'CASCADE', 
+    hooks: true          
 });
 
 Label.belongsToMany(Note, {
@@ -34,7 +34,7 @@ Label.belongsToMany(Note, {
     through: 'NoteLabelings',
     foreignKey: 'labelId',
     otherKey: 'noteId',
-    onDelete: 'CASCADE'  // Recommended here too
+
 });
 
 // Student.hasMany(NoteSharing, {

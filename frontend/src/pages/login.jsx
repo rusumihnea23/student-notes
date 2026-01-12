@@ -31,7 +31,7 @@ function Login() {
       className="d-flex justify-content-center align-items-center"
       style={{ minHeight: "100vh" }}
     >
-      <div className>
+      <div >
         <h2 className="mb-4 text-center">Login</h2>
 
         <form onSubmit={handleLogin} className="w-100" >

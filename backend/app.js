@@ -327,7 +327,7 @@ app.delete('/students/notes/:noteId', authenticateToken, async (req, res) => {
         if (!note) {
             return res.status(404).json({ message: "Note not found or unauthorized" });
         }
-
+        await note.setLabels([]);
         await note.destroy();
         return res.status(200).json({ message: "Note deleted successfully" });
 
@@ -351,19 +351,26 @@ app.get("/students/subjects/:subjectId/filter",authenticateToken,async(req,res)=
     return res.status(200).json(notes);
 
 })
-app.get("/students/labels/:labelId/filter",authenticateToken,async(req,res)=>{
-//endponit care returneaza notitele bazat pe un label 
+app.get("/students/labels/:labelId/filter", authenticateToken, async (req, res) => {
+  try {
+    // Find the label
+    let label = await Label.findByPk(req.params.labelId);
+    if (!label) {
+      return res.status(404).json({ message: `Label doesn't exist` });
+    }
 
- let label=await Label.findByPk(req.params.labelId)
-    if(!label)
-        return res.status(404).json({message:`label doesn't exist`});
- const notes = await label.getNotes({
-    attributes:["title","body","noteId"]
- });
+    // Get notes that belong to this student only
+    const notes = await label.getNotes({
+      where: { studentId: req.user.id }, // filter by current student
+      attributes: ["title", "body", "noteId"],
+    });
 
     return res.status(200).json(notes);
-
-})
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
 //Subjects
 
 app.post("/students/subjects",authenticateToken,async(req,res)=>{
@@ -418,26 +425,8 @@ try {
 }
 
 })
-app.patch("/students/subjects/:subjectId",async(req,res)=>{
-// endpoint care editeaza subiect
-try {
- let subject=await Subject.findByPk(req.params.subjectId)
-    if(!subject)
-        return res.status(404).json({message:`subject doesn't exist`});
 
-    const newName=req.body.name;
-    
-    if(newName===undefined||!newName||newName.trim().length===0||newName===""|| typeof newName!=="string")
-       return res.status(400).json({message:"Malformed name"});
-    subject.name=newName;
 
-    await subject.save();
-    return res.status(200).json({message:"subject updated succesfully"});    
-} catch (err) {
-    return res.status(500).json({ message: "Something went wrong" })
-}
-
-})
 app.get("/students/subjects/:subjectId",async(req,res)=>{
     //endpoint care sterge un subiect 
 try {
@@ -481,33 +470,40 @@ let subject=await Subject.findByPk(
 
 //Labels
 
-
 app.post("/students/labels", authenticateToken, async (req, res) => {
-    //endpoint care creaza label
   try {
     const student = await Student.findByPk(req.user.id);
     if (!student)
-      return res.status(404).json({ message: `student doesn't exist` });
-    if (!req.body.tag || !req.body.tag.trim())
-      return res.status(400).json({ message: "Malformed tag" });
-    const label = await Label.create({ tag: req.body.tag });
+      return res.status(404).json({ message: `Student doesn't exist` });
+
+    const tag = req.body.tag?.trim();
+    if (!tag) return res.status(400).json({ message: "Malformed tag" });
+
+    const label = await Label.create({ tag });
     return res.status(201).json(label);
   } catch (err) {
+    if (err instanceof Sequelize.UniqueConstraintError) {
+      return res.status(400).json({ message: "Label already exists" });
+    }
     return res.status(500).json({ message: "Something went wrong", error: err.message });
   }
 });
 
 app.delete("/students/labels/:labelId", authenticateToken, async (req, res) => {
-    //sterge un label
-    
   try {
-    const label = await Label.findByPk(req.params.labelId);
+    const label = await Label.findByPk(req.params.labelId, { include: 'Notes' });
     if (!label) return res.status(404).json({ message: "Label doesn't exist" });
 
+    // Remove all note associations first
+    if (label.Notes && label.Notes.length > 0) {
+      await label.setNotes([]); // removes all links in NoteLabelings
+    }
+
     await label.destroy();
-    res.json({ message: "Label deleted" });
+    return res.status(200).json({ message: "Label deleted" });
   } catch (err) {
-    res.status(500).json({ message: "Something went wrong" });
+    console.error("Error deleting label:", err);
+    return res.status(500).json({ message: "Something went wrong", error: err.message });
   }
 });
 
@@ -590,45 +586,54 @@ app.get("/students/notes/:noteId/labels",authenticateToken,async(req,res)=>{
 
 
 
-// app.get("/students/labels", authenticateToken, async (req, res) => {
-//     //toate labelurile tuturor notitelor 
-//     const studentId=req.user.id;
-//   try {
-//     const labels = await Label.findAll({
-//       attributes: ["labelId", "tag"], // only return id + tag
-//     });
-//     return res.status(200).json(labels);
-//   } catch (err) {
-//     console.error(err);
-//     return res.status(500).json({ message: "Something went wrong" });
-//   }
-// });
 app.get("/students/labels", authenticateToken, async (req, res) => {
+  const studentId = req.user.id;
+
   try {
     const labels = await Label.findAll({
       attributes: ["labelId", "tag"],
-      include: [
-        {
-          model: Note,
-          as: "Notes",
-          attributes: [],
-          where: {
-            studentId: req.user.id
-          },
-          through: {
-            attributes: []
-          }
-        }
-      ],
+      include: [{
+        model: Note,
+        as: "Notes",
+        attributes: [],
+        where: { studentId },   
+        through: { attributes: [] }
+      }],
       distinct: true
     });
 
     return res.status(200).json(labels);
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ message: err.message });
+    return res.status(500).json({ message: "Something went wrong" });
   }
 });
+// app.get("/students/labels", authenticateToken, async (req, res) => {
+//   try {
+//     const labels = await Label.findAll({
+//       attributes: ["labelId", "tag"],
+//       include: [
+//         {
+//           model: Note,
+//           as: "Notes",
+//           attributes: [],
+//           where: {
+//             studentId: req.user.id
+//           },
+//           through: {
+//             attributes: []
+//           }
+//         }
+//       ],
+//       distinct: true
+//     });
+
+//     return res.status(200).json(labels);
+//   } catch (err) {
+//     console.error(err);
+//     return res.status(500).json({ message: err.message });
+//   }
+// });
 
 
 

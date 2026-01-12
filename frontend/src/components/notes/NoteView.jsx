@@ -145,7 +145,7 @@ console.log("selectedStudent raw:", selectedStudent);
                   onChange={(e) => setPermission(e.target.value)}
                 >
                   <option value="read">Read</option>
-                  <option value="write">Write</option>
+                  
                 </select>
               </div>
 
