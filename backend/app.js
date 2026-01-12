@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors'
 import {authRoutes} from './routes/auth.js'
 import { authenticateToken } from './auth/authMiddleware.js';
+import { Op } from "sequelize";
 dotenv.config();
 
 
@@ -20,7 +21,7 @@ import { Attachment,Student,Label,Note,NoteSharing,StudyGroup,Subject } from './
 async function start() {
     try {
         await syncDb();
-        await seedStudents();
+       // await seedStudents();
         
         app.listen(PORT, () => {
             console.log("Server is listening on port: ", PORT)
@@ -46,6 +47,49 @@ res.status(400).json({exemplu:"mama"});
 
 })
 //Student
+app.get("/username", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id; // or req.user.studentId
+
+    const student = await Student.findOne({
+      where: { studentId: userId },
+      attributes: ["studentId", "name"]
+    });
+
+    if (!student) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({
+      studentId: student.studentId,
+      username: student.name
+    });
+  } catch (err) {
+    console.error("Error fetching username:", err);
+    res.status(500).json({ error: err.message });
+  }
+}); 
+
+app.get("/students", authenticateToken, async (req, res) => {
+  const excludedId = req.user.id;
+
+  try {
+    const allStudents = await Student.findAll({
+      attributes: ["studentId", "name", "email"], // only fetch needed fields
+      where: {
+        studentId: { [Op.ne]: excludedId } // exclude the logged-in student
+      }
+    });
+
+    res.json(allStudents);
+  } catch (err) {
+    console.error("Error fetching students:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
 app.post("/students",async(req,res)=>{
     //endpoint ce creaza student
 const body=req.body;
@@ -130,9 +174,6 @@ try {
 //     return res.status(500).json({ message: "Internal server error" });
 //   }
 // });
-
-
-
 
 
 
@@ -330,7 +371,7 @@ app.post("/students/subjects",authenticateToken,async(req,res)=>{
 
  let student=await Student.findByPk(
    req.user.id)
-    
+    const studentId=req.user.id;
     if(!student)
         return res.status(404).json({message:`student doesn't exist`});
 
@@ -342,7 +383,7 @@ app.post("/students/subjects",authenticateToken,async(req,res)=>{
     if(!body.name||body.name===""||body.name.trim().length===0)
     return res.status(400).json({message:"Malformed subject"});
 
-    const subject=await Subject.create({name:body.name});
+    const subject=await Subject.create({name:body.name,studentId});
 
  
      return res.status(201).json(subject);
@@ -350,7 +391,7 @@ app.post("/students/subjects",authenticateToken,async(req,res)=>{
 })
 app.get("/students/subjects", authenticateToken, async (req, res) => {
   try {
-    const subjects = await Subject.findAll(); // all subjects
+    const subjects = await Subject.findAll({where:{studentId:req.user.id}}); // all subjects
     res.json(subjects); // send array of {subjectId, name}
   } catch (err) {
     res.status(500).json({ message: "Something went wrong" });
@@ -549,16 +590,43 @@ app.get("/students/notes/:noteId/labels",authenticateToken,async(req,res)=>{
 
 
 
+// app.get("/students/labels", authenticateToken, async (req, res) => {
+//     //toate labelurile tuturor notitelor 
+//     const studentId=req.user.id;
+//   try {
+//     const labels = await Label.findAll({
+//       attributes: ["labelId", "tag"], // only return id + tag
+//     });
+//     return res.status(200).json(labels);
+//   } catch (err) {
+//     console.error(err);
+//     return res.status(500).json({ message: "Something went wrong" });
+//   }
+// });
 app.get("/students/labels", authenticateToken, async (req, res) => {
-    //toate labelurile tuturor notitelor 
   try {
     const labels = await Label.findAll({
-      attributes: ["labelId", "tag"], // only return id + tag
+      attributes: ["labelId", "tag"],
+      include: [
+        {
+          model: Note,
+          as: "Notes",
+          attributes: [],
+          where: {
+            studentId: req.user.id
+          },
+          through: {
+            attributes: []
+          }
+        }
+      ],
+      distinct: true
     });
+
     return res.status(200).json(labels);
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ message: "Something went wrong" });
+    return res.status(500).json({ message: err.message });
   }
 });
 
@@ -712,10 +780,33 @@ app.get("/students/noteSharing", authenticateToken, async (req, res) => {
   }
 });
 
+// app.post("/notesharing", authenticateToken, async (req, res) => {
+//   try {
+//     const { noteId, sharedWithStudentId, permission } = req.body;
+
+//     const note = await Note.findOne({
+//       where: { noteId, studentId: req.user.id }
+//     });
+
+//     if (!note) {
+//       return res.status(403).json({ message: "Not your note" });
+//     }
+
+//     const sharing = await NoteSharing.create({
+//       noteId,
+//       studentId: req.user.id,
+//       sharedWithStudentId,
+//       permission
+//     });
+
+//     res.status(201).json(sharing);
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 app.post("/notesharing", authenticateToken, async (req, res) => {
   try {
     const { noteId, sharedWithStudentId, permission } = req.body;
-
     const note = await Note.findOne({
       where: { noteId, studentId: req.user.id }
     });
@@ -723,7 +814,12 @@ app.post("/notesharing", authenticateToken, async (req, res) => {
     if (!note) {
       return res.status(403).json({ message: "Not your note" });
     }
-
+    const existingShare = await NoteSharing.findOne({
+      where: { noteId, sharedWithStudentId }
+    });
+    if (existingShare) {
+      return res.status(400).json({ message: "Note already shared with this student" });
+    }
     const sharing = await NoteSharing.create({
       noteId,
       studentId: req.user.id,
@@ -732,7 +828,9 @@ app.post("/notesharing", authenticateToken, async (req, res) => {
     });
 
     res.status(201).json(sharing);
+
   } catch (err) {
+    console.error("Error sharing note:", err);
     res.status(500).json({ error: err.message });
   }
 });

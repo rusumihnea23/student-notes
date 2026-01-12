@@ -13,6 +13,9 @@ Subject.init(
             type:DataTypes.STRING,
             allowNull:false,
              unique: true
+        },
+        studentId:{ type:DataTypes.INTEGER,
+            
         }
     },
     {

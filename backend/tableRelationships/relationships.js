@@ -97,8 +97,14 @@ NoteSharing.belongsTo(Student, {
 });
 
 // note relation
-Note.hasMany(NoteSharing, { foreignKey: "noteId" });
+Note.hasMany(NoteSharing, {
+  foreignKey: "noteId",
+  onDelete: "CASCADE",
+  hooks: true
+});
 NoteSharing.belongsTo(Note, { foreignKey: "noteId" });
+
+
 
 
 export {Attachment,Student,Label,Note,NoteSharing,StudyGroup,Subject}
