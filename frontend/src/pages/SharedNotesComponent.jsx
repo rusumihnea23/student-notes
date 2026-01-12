@@ -17,14 +17,14 @@ const SharedNotesComponent = () => {
     });
 }, []);
 
-  if (loading) return <p>Se încarcă notele partajate...</p>;
+  if (loading) return <p>Loading Notes...</p>;
 
   return (
     <div className="shared-notes-list">
-      <h2>Note Primite de la Colegi</h2>
+      <h2>Notes from Colleagues</h2>
 
       {sharedNotes.length === 0 ? (
-        <p>Nu ai primit nicio notă încă.</p>
+        <p>No notes yet.</p>
       ) : (
         sharedNotes.map((item) => (
           <div key={item.sharingId} style={cardStyle}>
@@ -32,11 +32,11 @@ const SharedNotesComponent = () => {
             <p>{item.Note.body}</p>
             <hr />
             <small>
-              Trimis de: <strong>@{item.Note.Student.username}</strong>
+              Send from: <strong>@{item.Note.Student.username}</strong>
             </small>
             <br />
             <small>
-              Permisiune: {item.permission ? "Editare" : "Doar citire"}
+              Permission: {item.permission ? "Edit" : "Read Only"}
             </small>
           </div>
         ))

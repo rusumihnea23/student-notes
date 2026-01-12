@@ -48,7 +48,7 @@ const MyNotes = () => {
   };
 
 const deleteNote = async (noteId, e) => {
-  e.stopPropagation(); // Prevents navigating to the note details when clicking delete
+  e.stopPropagation(); 
   
   if (!window.confirm("Are you sure you want to delete this note?")) return;
 
@@ -73,7 +73,7 @@ const deleteNote = async (noteId, e) => {
   const handleFilterTypeChange = (e) => {
     const type = e.target.value;
     setFilterType(type);
-    // Reset selections when switching types
+
     setSelectedSubject("all");
     setSelectedLabel("all");
     applyFilters(notes, type, "all", "all", dateOrder);
