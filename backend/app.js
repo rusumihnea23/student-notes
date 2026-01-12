@@ -296,7 +296,33 @@ app.delete('/students/notes/:noteId', authenticateToken, async (req, res) => {
         return res.status(500).json({ error: "Internal server error" });
     }
 });
+app.get("/students/subjects/:subjectId/filter",authenticateToken,async(req,res)=>{
+//endponit care returneaza notitele bazat pe un subiect 
+ const studentId = req.user.id;
 
+ let subject=await Subject.findByPk(req.params.subjectId)
+    if(!subject)
+        return res.status(404).json({message:`subject doesn't exist`});
+ const notes = await subject.getNotes({
+    attributes:["title","body"]
+ });
+
+    return res.status(200).json(notes);
+
+})
+app.get("/students/labels/:labelId/filter",authenticateToken,async(req,res)=>{
+//endponit care returneaza notitele bazat pe un label 
+
+ let label=await Label.findByPk(req.params.labelId)
+    if(!label)
+        return res.status(404).json({message:`label doesn't exist`});
+ const notes = await label.getNotes({
+    attributes:["title","body","noteId"]
+ });
+
+    return res.status(200).json(notes);
+
+})
 //Subjects
 
 app.post("/students/subjects",authenticateToken,async(req,res)=>{
@@ -387,8 +413,6 @@ try {
 
 })
 
-
-
 app.patch("/students/notes/:noteId/subjects/:subjectId",authenticateToken,async(req,res)=>{
 //endpoint care adauga subiectul la notita
 try {
@@ -418,18 +442,14 @@ let subject=await Subject.findByPk(
 
 
 app.post("/students/labels", authenticateToken, async (req, res) => {
+    //endpoint care creaza label
   try {
     const student = await Student.findByPk(req.user.id);
     if (!student)
       return res.status(404).json({ message: `student doesn't exist` });
-
     if (!req.body.tag || !req.body.tag.trim())
       return res.status(400).json({ message: "Malformed tag" });
-
-    // Create label
     const label = await Label.create({ tag: req.body.tag });
-
-    // Return the created label
     return res.status(201).json(label);
   } catch (err) {
     return res.status(500).json({ message: "Something went wrong", error: err.message });
@@ -474,6 +494,7 @@ try {
 
 }) 
 app.patch("/students/notes/:noteId/labels/:labelId", authenticateToken, async (req, res) => {
+    ///endpoitn care face legatura intre label si note
   try {
     const noteId = Number(req.params.noteId);
     const labelId = Number(req.params.labelId);
@@ -484,7 +505,7 @@ app.patch("/students/notes/:noteId/labels/:labelId", authenticateToken, async (r
     const label = await Label.findByPk(labelId);
     if (!label) return res.status(404).json({ message: "Label doesn't exist" });
 
-    // Correct method name: addLabel (singular)
+   
     await note.addLabel(label, { ignoreDuplicates: true });
 
     return res.status(201).json({ message: "Label assigned successfully" });
@@ -495,7 +516,7 @@ app.patch("/students/notes/:noteId/labels/:labelId", authenticateToken, async (r
 });
 
 app.delete("/students/notes/:noteId/labels/:labelId", authenticateToken, async (req, res) => {
-    //unasign label from note 
+    //endpitn care dezleaga legatura dintre label si note 
   try {
     const note = await Note.findOne({
       where: { noteId: req.params.noteId, studentId: req.user.id }
@@ -526,23 +547,10 @@ app.get("/students/notes/:noteId/labels",authenticateToken,async(req,res)=>{
 
 })
 
-app.get("/students/labels/:labelId/filter",authenticateToken,async(req,res)=>{
-//endponit care returneaza notitele bazat pe un label 
-
- let label=await Label.findByPk(req.params.labelId)
-    if(!label)
-        return res.status(404).json({message:`label doesn't exist`});
- const notes = await label.getNotes({
-    attributes:["title","body","noteId"]
- });
-
-    return res.status(200).json(notes);
-
-})
 
 
-// Get all labels
 app.get("/students/labels", authenticateToken, async (req, res) => {
+    //toate labelurile tuturor notitelor 
   try {
     const labels = await Label.findAll({
       attributes: ["labelId", "tag"], // only return id + tag
@@ -554,20 +562,7 @@ app.get("/students/labels", authenticateToken, async (req, res) => {
   }
 });
 
-app.get("/students/subjects/:subjectId/filter",authenticateToken,async(req,res)=>{
-//endponit care returneaza notitele bazat pe un subiect 
- const studentId = req.user.id;
 
- let subject=await Subject.findByPk(req.params.subjectId)
-    if(!subject)
-        return res.status(404).json({message:`subject doesn't exist`});
- const notes = await subject.getNotes({
-    attributes:["title","body"]
- });
-
-    return res.status(200).json(notes);
-
-})
 
 //Attachments
 app.post("/students/notes/:noteId/attachments",authenticateToken, async(req,res)=>{
@@ -629,40 +624,39 @@ app.get("/students/notes/:noteId/attachments", authenticateToken, async (req, re
 
 
 
-//de reparat sters label, adaugat label unei notite  -> comportament ciudat, baza de date considera NoteLabelings cu key unice si nu stiu de ce cateodata merge cateodata nu  
 
 //Note sharing
-app.post("/students/:studentId/notes/:noteId/noteSharing",async(req,res)=>{
-    //endpoint care creeaza un notesharing
-     try{
-    let student=await Student.findByPk(
-   req.params.studentId)
-    if(!student)
-        return res.status(404).json({message:`student doesn't exist`});
-    const body=req.body;
-    const note = await Note.findOne({
-     where: { studentId: req.params.studentId, noteId:req.params.noteId}});   
+// app.post("/students/:studentId/notes/:noteId/noteSharing",async(req,res)=>{
+//     //endpoint care creeaza un notesharing
+//      try{
+//     let student=await Student.findByPk(
+//    req.params.studentId)
+//     if(!student)
+//         return res.status(404).json({message:`student doesn't exist`});
+//     const body=req.body;
+//     const note = await Note.findOne({
+//      where: { studentId: req.params.studentId, noteId:req.params.noteId}});   
     
-    if(!note)
-        return res.status(404).json({message:`note doesn't exist`});
+//     if(!note)
+//         return res.status(404).json({message:`note doesn't exist`});
    
-    if(!body.permission||body.permission===""||body.permission.trim().length===0)
-    return res.status(400).json({message:"Malformed subject"});   
-    if(!body.username||body.username===""||body.username.trim().length===0)
-    return res.status(400).json({message:"Malformed subject"});
+//     if(!body.permission||body.permission===""||body.permission.trim().length===0)
+//     return res.status(400).json({message:"Malformed subject"});   
+//     if(!body.username||body.username===""||body.username.trim().length===0)
+//     return res.status(400).json({message:"Malformed subject"});
 
-    const receivingStudent= await  Student.findOne({
-        where:{username:body.username}
-    });
-    if(!receivingStudent)
-        return res.status(404).json({message:'user doesnt exist'});
+//     const receivingStudent= await  Student.findOne({
+//         where:{username:body.username}
+//     });
+//     if(!receivingStudent)
+//         return res.status(404).json({message:'user doesnt exist'});
 
-    const noteSharing=await NoteSharing.create({permission:body.permission,username:body.username, noteId:note.noteId,studemtId:student.studentId});
+//     const noteSharing=await NoteSharing.create({permission:body.permission,username:body.username, noteId:note.noteId,studemtId:student.studentId});
 
-    return res.status(201).json({message:"Note shared succesfully"});   
-   }
-   catch(err){return res.status(500).json({ message: "Something went wrong",error: err.message })}
-})
+//     return res.status(201).json({message:"Note shared succesfully"});   
+//    }
+//    catch(err){return res.status(500).json({ message: "Something went wrong",error: err.message })}
+// })
 
 app.delete("/students/:studentId/notes/:noteId/noteSharing/:sharingId",async(req,res)=>{
     //endpoint sterge note sharing
@@ -682,14 +676,65 @@ app.delete("/students/:studentId/notes/:noteId/noteSharing/:sharingId",async(req
     }
 })
 
-app.get("/students/:studentId/noteSharing",async(req,res)=>{
-    let student=await Student.findByPk(req.params.studentId)
-    if(!student)
-        return res.status(404).json({message:'student doesnt exist'});
-    const noteSharings=await NoteSharing.findAll({
-        where:{username:student.username}
-    })
-        return res.status(200).json(noteSharings);
-})
+// app.get("/students/noteSharing",authenticateToken,async(req,res)=>{
+//     let student=await Student.findByPk(req.user.id)
+//     if(!student)
+//         return res.status(404).json({message:'student doesnt exist'});
+//     const noteSharings=await NoteSharing.findAll({
+//         where:{username:student.username}
+//     })
+//         return res.status(200).json(noteSharings);
+// })
+app.get("/students/noteSharing", authenticateToken, async (req, res) => {
+  try {
+    const noteSharings = await NoteSharing.findAll({
+      where: {
+        sharedWithStudentId: req.user.id
+      },
+      include: [
+        {
+          model: Note,
+          include: [
+            {
+              model: Student,
+              as: "Student",
+              attributes: ["username"]
+            }
+          ]
+        }
+      ]
+    });
+
+    return res.status(200).json(noteSharings);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.post("/notesharing", authenticateToken, async (req, res) => {
+  try {
+    const { noteId, sharedWithStudentId, permission } = req.body;
+
+    const note = await Note.findOne({
+      where: { noteId, studentId: req.user.id }
+    });
+
+    if (!note) {
+      return res.status(403).json({ message: "Not your note" });
+    }
+
+    const sharing = await NoteSharing.create({
+      noteId,
+      studentId: req.user.id,
+      sharedWithStudentId,
+      permission
+    });
+
+    res.status(201).json(sharing);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 start();

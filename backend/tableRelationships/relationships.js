@@ -37,21 +37,19 @@ Label.belongsToMany(Note, {
     onDelete: 'CASCADE'  // Recommended here too
 });
 
-Student.hasMany(NoteSharing, {
-    as: 'NoteSharings',
-    foreignKey: "studentId",
-    onDelete: 'CASCADE',
-    onUpdate: 'CASCADE'
-})
-NoteSharing.belongsTo(Student, { as: 'Student', foreignKey: "studentId" })
+// Student.hasMany(NoteSharing, {
+//     as: 'NoteSharings',
+//     foreignKey: "studentId",
+//     onDelete: 'CASCADE',
+//     onUpdate: 'CASCADE'
+// })
+// NoteSharing.belongsTo(Student, { as: 'Student', foreignKey: "studentId" })
 
-Note.hasMany(NoteSharing, {
-    as: 'NoteSharings',
-    foreignKey: "noteId",
-    onDelete: 'CASCADE',
-    onUpdate: 'CASCADE'
-})
-NoteSharing.belongsTo(Note, { as: 'Note', foreignKey: "noteId" })
+// Student.hasMany(NoteSharing, {
+//     as: 'NoteSharings',
+//     foreignKey: "studentId",
+// })
+// NoteSharing.belongsTo(Note, { as: 'Note', foreignKey: "noteId" })
 
 Student.hasMany(Note, {
     as: 'Notes',
@@ -76,6 +74,31 @@ Subject.hasMany(Note, {
     onUpdate: 'CASCADE'
 })
 Note.belongsTo(Subject, { as: 'Subject', foreignKey: "subjectId" })
+
+
+// who shared
+Student.hasMany(NoteSharing, {
+  foreignKey: "studentId",
+  as: "SharedNotes"
+});
+NoteSharing.belongsTo(Student, {
+  foreignKey: "studentId",
+  as: "Sender"
+});
+
+// who received
+Student.hasMany(NoteSharing, {
+  foreignKey: "sharedWithStudentId",
+  as: "ReceivedNotes"
+});
+NoteSharing.belongsTo(Student, {
+  foreignKey: "sharedWithStudentId",
+  as: "Receiver"
+});
+
+// note relation
+Note.hasMany(NoteSharing, { foreignKey: "noteId" });
+NoteSharing.belongsTo(Note, { foreignKey: "noteId" });
 
 
 export {Attachment,Student,Label,Note,NoteSharing,StudyGroup,Subject}
