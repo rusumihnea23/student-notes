@@ -12,16 +12,16 @@ Made in collaboration with [**Raevschi Ana**](https://github.com/RaevschiAna) (G
  ## 📸 Application Screenshots
 
 ### ➕ Add Note Page
-![Add Note Page](screenshots/AddNotePage.png)
+![Add Note Page](screenshots/AddNotePage.PNG)
 
 ### 📂 My Notes
-![My Notes](screenshots/MyNotes.png)
+![My Notes](screenshots/MyNotes.PNG)
 
 ### 📝 View Note Page
-![View Note Page](screenshots/ViewNotePage.png)
+![View Note Page](screenshots/ViewNotePage.PNG)
 
 ### 🧾 Register Page
-![Register Page](screenshots/registerPage.png) 
+![Register Page](screenshots/registerPage.PNG) 
 
 
 ---
